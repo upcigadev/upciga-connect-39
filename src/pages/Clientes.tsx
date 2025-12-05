@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Plus, Search, Filter, MoreHorizontal, Edit, Trash2, Loader2, AlertCircle } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Table,
   TableBody,
@@ -25,25 +26,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const mockClientes = [
-  { id: 1, nome: "Tech Solutions LTDA", documento: "12.345.678/0001-90", tipo: "PJ", telefone: "(11) 99999-0001", etiqueta: "green", produtos: ["ERP", "NFe"] },
-  { id: 2, nome: "Mercado Central", documento: "23.456.789/0001-01", tipo: "PJ", telefone: "(11) 99999-0002", etiqueta: "blue", produtos: ["PDV"] },
-  { id: 3, nome: "João da Silva", documento: "123.456.789-00", tipo: "PF", telefone: "(11) 99999-0003", etiqueta: "red", produtos: ["ERP"] },
-  { id: 4, nome: "Farmácia Vida", documento: "34.567.890/0001-12", tipo: "PJ", telefone: "(11) 99999-0004", etiqueta: "green", produtos: ["ERP", "PDV", "NFe"] },
-  { id: 5, nome: "Padaria do João", documento: "45.678.901/0001-23", tipo: "PJ", telefone: "(11) 99999-0005", etiqueta: "blue", produtos: ["PDV"] },
-];
+import { useClientes } from "@/hooks/useClientes";
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterLabel, setFilterLabel] = useState<string>("all");
+  
+  const { data: clientes = [], isLoading, error } = useClientes();
 
-  const filteredClientes = mockClientes.filter((cliente) => {
-    const matchesSearch = cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      cliente.documento.includes(searchTerm);
-    const matchesFilter = filterLabel === "all" || cliente.etiqueta === filterLabel;
-    return matchesSearch && matchesFilter;
-  });
+  // Memoizar a filtragem para evitar re-renderizações desnecessárias
+  const filteredClientes = useMemo(() => {
+    return clientes.filter((cliente) => {
+      const matchesSearch = cliente.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        cliente.documento.includes(searchTerm);
+      const matchesFilter = filterLabel === "all" || cliente.etiqueta === filterLabel;
+      return matchesSearch && matchesFilter;
+    });
+  }, [clientes, searchTerm, filterLabel]);
 
   return (
     <div className="animate-fade-in">
@@ -82,83 +81,118 @@ export default function Clientes() {
         </Select>
       </div>
 
+      {/* Error State */}
+      {error && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro ao carregar clientes</AlertTitle>
+          <AlertDescription>
+            {error instanceof Error ? error.message : 'Ocorreu um erro desconhecido ao buscar os clientes.'}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Loading State */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-muted-foreground">Carregando clientes...</span>
+        </div>
+      )}
+
       {/* Table */}
-      <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="font-semibold">Cliente</TableHead>
-              <TableHead className="font-semibold">Documento</TableHead>
-              <TableHead className="font-semibold">Telefone</TableHead>
-              <TableHead className="font-semibold">Produtos</TableHead>
-              <TableHead className="font-semibold">Etiqueta</TableHead>
-              <TableHead className="font-semibold text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredClientes.map((cliente) => (
-              <TableRow key={cliente.id} className="hover:bg-muted/30 transition-colors">
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                      <span className="text-sm font-bold text-primary">
-                        {cliente.nome.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{cliente.nome}</p>
-                      <p className="text-xs text-muted-foreground">{cliente.tipo}</p>
-                    </div>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{cliente.documento}</TableCell>
-                <TableCell className="text-muted-foreground">{cliente.telefone}</TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {cliente.produtos.map((produto) => (
-                      <StatusBadge key={produto} variant="info">
-                        {produto}
-                      </StatusBadge>
-                    ))}
-                  </div>
-                </TableCell>
-                <TableCell>
-                  <StatusBadge
-                    variant={
-                      cliente.etiqueta === "green"
-                        ? "labelGreen"
-                        : cliente.etiqueta === "blue"
-                        ? "labelBlue"
-                        : "labelRed"
-                    }
-                  >
-                    {cliente.etiqueta === "green" ? "Ativo" : cliente.etiqueta === "blue" ? "Regular" : "Atenção"}
-                  </StatusBadge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-popover">
-                      <DropdownMenuItem className="gap-2 cursor-pointer">
-                        <Edit className="h-4 w-4" />
-                        Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 cursor-pointer text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                        Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
+      {!isLoading && !error && (
+        <div className="rounded-xl border border-border bg-card shadow-card overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead className="font-semibold">Cliente</TableHead>
+                <TableHead className="font-semibold">Documento</TableHead>
+                <TableHead className="font-semibold">Telefone</TableHead>
+                <TableHead className="font-semibold">Produtos</TableHead>
+                <TableHead className="font-semibold">Etiqueta</TableHead>
+                <TableHead className="font-semibold text-right">Ações</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            </TableHeader>
+            <TableBody>
+              {filteredClientes.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                    {searchTerm || filterLabel !== "all" 
+                      ? "Nenhum cliente encontrado com os filtros aplicados." 
+                      : "Nenhum cliente cadastrado."}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredClientes.map((cliente) => (
+                  <TableRow key={cliente.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+                          <span className="text-sm font-bold text-primary">
+                            {cliente.nome.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{cliente.nome}</p>
+                          <p className="text-xs text-muted-foreground">{cliente.tipo}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{cliente.documento}</TableCell>
+                    <TableCell className="text-muted-foreground">{cliente.telefone}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        {cliente.produtos.length > 0 ? (
+                          cliente.produtos.map((produto) => (
+                            <StatusBadge key={produto} variant="info">
+                              {produto}
+                            </StatusBadge>
+                          ))
+                        ) : (
+                          <span className="text-xs text-muted-foreground">Nenhum produto</span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <StatusBadge
+                        variant={
+                          cliente.etiqueta === "green"
+                            ? "labelGreen"
+                            : cliente.etiqueta === "blue"
+                            ? "labelBlue"
+                            : "labelRed"
+                        }
+                      >
+                        {cliente.etiqueta === "green" ? "Ativo" : cliente.etiqueta === "blue" ? "Regular" : "Atenção"}
+                      </StatusBadge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="bg-popover">
+                          <DropdownMenuItem className="gap-2 cursor-pointer">
+                            <Edit className="h-4 w-4" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2 cursor-pointer text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
     </div>
   );
 }

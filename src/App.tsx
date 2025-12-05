@@ -12,7 +12,16 @@ import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutos - dados considerados frescos
+      gcTime: 1000 * 60 * 10, // 10 minutos - tempo de cache (anteriormente cacheTime)
+      retry: 1, // Tentar novamente apenas 1 vez em caso de erro
+      refetchOnWindowFocus: false, // Não refazer fetch ao focar na janela
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
