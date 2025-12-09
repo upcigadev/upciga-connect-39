@@ -26,6 +26,7 @@ export type Database = {
           modalidade: string | null
           tipo: string
           urgencia: string | null
+          valor: number | null
         }
         Insert: {
           cliente_nome?: string | null
@@ -38,6 +39,7 @@ export type Database = {
           modalidade?: string | null
           tipo: string
           urgencia?: string | null
+          valor?: number | null
         }
         Update: {
           cliente_nome?: string | null
@@ -50,6 +52,7 @@ export type Database = {
           modalidade?: string | null
           tipo?: string
           urgencia?: string | null
+          valor?: number | null
         }
         Relationships: []
       }
@@ -116,6 +119,119 @@ export type Database = {
           nome?: string
           servicos?: string[] | null
           status?: string | null
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          ativo: boolean | null
+          created_at: string
+          id: number
+          nome: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string
+          id?: number
+          nome: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string
+          id?: number
+          nome?: string
+        }
+        Relationships: []
+      }
+      schedule_blocks: {
+        Row: {
+          created_at: string
+          data_fim: string
+          data_inicio: string
+          descricao: string
+          funcionario_id: number | null
+          hora_fim: string | null
+          hora_inicio: string | null
+          id: number
+          tipo: string
+        }
+        Insert: {
+          created_at?: string
+          data_fim: string
+          data_inicio: string
+          descricao: string
+          funcionario_id?: number | null
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: number
+          tipo?: string
+        }
+        Update: {
+          created_at?: string
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string
+          funcionario_id?: number | null
+          hora_fim?: string | null
+          hora_inicio?: string | null
+          id?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "schedule_blocks_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_types: {
+        Row: {
+          ativo: boolean | null
+          created_at: string
+          id: number
+          nome: string
+          valor_padrao: number | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string
+          id?: number
+          nome: string
+          valor_padrao?: number | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string
+          id?: number
+          nome?: string
+          valor_padrao?: number | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          chave: string
+          created_at: string
+          id: number
+          updated_at: string
+          valor: string | null
+        }
+        Insert: {
+          chave: string
+          created_at?: string
+          id?: number
+          updated_at?: string
+          valor?: string | null
+        }
+        Update: {
+          chave?: string
+          created_at?: string
+          id?: number
+          updated_at?: string
+          valor?: string | null
         }
         Relationships: []
       }
