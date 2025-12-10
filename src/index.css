@@ -1,34 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* UPCIGA Brand Colors */
-    --background: 220 20% 98%;
-    --foreground: 222 47% 11%;
+    /* UPCIGA Brand Colors - Identidade Visual Exata */
+    --background: 0 0% 100%;
+    --foreground: 222 84% 15%; /* Azul escuro quase preto */
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 222 84% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 222 84% 15%;
 
     /* Royal Blue - Primary Action */
-    --primary: 221 83% 53%;
+    --primary: 221 83% 53%; /* Azul Royal Vibrante */
     --primary-foreground: 0 0% 100%;
 
     /* Light blue/gray for secondary */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 222 47% 11%;
+    --secondary: 210 40% 98%;
+    --secondary-foreground: 222 84% 15%;
 
-    --muted: 220 14% 96%;
+    --muted: 210 40% 98%;
     --muted-foreground: 215 16% 47%;
 
     /* Lime Green - UPCIGA Accent */
-    --accent: 84 81% 44%;
+    --accent: 84 81% 44%; /* Verde Limão da Marca */
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -47,50 +45,50 @@
     --label-blue: 221 83% 53%;
     --label-green: 142 71% 45%;
 
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
     --ring: 221 83% 53%;
 
     --radius: 0.75rem;
 
     /* Sidebar */
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 220 14% 96%;
+    --sidebar-background: 222 84% 15%;
+    --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 18%;
-    --sidebar-accent-foreground: 220 14% 96%;
-    --sidebar-border: 222 47% 18%;
+    --sidebar-accent: 222 84% 20%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 222 84% 20%;
     --sidebar-ring: 221 83% 53%;
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -4px hsl(222 47% 11% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(222 47% 11% / 0.1), 0 8px 10px -6px hsl(222 47% 11% / 0.1);
+    --shadow-sm: 0 1px 2px 0 hsl(222 84% 15% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(222 84% 15% / 0.1), 0 2px 4px -2px hsl(222 84% 15% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(222 84% 15% / 0.1), 0 4px 6px -4px hsl(222 84% 15% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(222 84% 15% / 0.1), 0 8px 10px -6px hsl(222 84% 15% / 0.1);
 
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(220 20% 98%) 0%, hsl(220 30% 95%) 50%, hsl(220 20% 98%) 100%);
-    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(220 20% 99%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(0 0% 100%) 0%, hsl(210 40% 98%) 50%, hsl(0 0% 100%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 40% 99%) 100%);
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 220 14% 96%;
+    --background: 222 84% 8%;
+    --foreground: 0 0% 100%;
 
-    --card: 222 47% 11%;
-    --card-foreground: 220 14% 96%;
+    --card: 222 84% 11%;
+    --card-foreground: 0 0% 100%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 220 14% 96%;
+    --popover: 222 84% 11%;
+    --popover-foreground: 0 0% 100%;
 
     --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 222 47% 15%;
-    --secondary-foreground: 220 14% 96%;
+    --secondary: 222 84% 15%;
+    --secondary-foreground: 0 0% 100%;
 
-    --muted: 222 47% 15%;
+    --muted: 222 84% 15%;
     --muted-foreground: 215 20% 65%;
 
     --accent: 84 81% 44%;
@@ -99,17 +97,17 @@
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 222 47% 18%;
-    --input: 222 47% 18%;
+    --border: 222 84% 18%;
+    --input: 222 84% 18%;
     --ring: 221 83% 53%;
 
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 220 14% 96%;
+    --sidebar-background: 222 84% 6%;
+    --sidebar-foreground: 0 0% 100%;
     --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 222 47% 12%;
-    --sidebar-accent-foreground: 220 14% 96%;
-    --sidebar-border: 222 47% 12%;
+    --sidebar-accent: 222 84% 12%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 222 84% 12%;
     --sidebar-ring: 221 83% 53%;
   }
 }
@@ -125,6 +123,20 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+  }
+
+  /* Typography - UPCIGA Brand */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Sora', sans-serif;
+    font-weight: 600;
+  }
+
+  h1 {
+    font-weight: 700;
+  }
+
+  h2 {
+    font-weight: 700;
   }
 }
 
@@ -143,5 +155,14 @@
 
   .gradient-card {
     background: var(--gradient-card);
+  }
+
+  /* Typography Utilities - UPCIGA Brand */
+  .font-display {
+    font-family: 'Sora', sans-serif;
+  }
+
+  .font-sans {
+    font-family: 'Inter', sans-serif;
   }
 }

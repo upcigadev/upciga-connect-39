@@ -91,8 +91,8 @@ export function AppSidebar() {
                 <span className="text-lg font-bold text-primary-foreground">U</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-sidebar-foreground">UPCIGA</h1>
-                <p className="text-xs text-sidebar-foreground/60">Sistemas</p>
+                <h1 className="text-lg font-display font-bold text-sidebar-foreground">UPCIGA</h1>
+                <p className="text-xs text-sidebar-foreground/60 font-sans">Sistemas</p>
               </div>
             </div>
           )}

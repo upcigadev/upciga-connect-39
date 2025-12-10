@@ -89,8 +89,8 @@ export default function Login() {
               <span className="text-2xl font-bold text-primary-foreground">U</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold text-foreground">UPCIGA</CardTitle>
-          <CardDescription className="text-muted-foreground">
+          <CardTitle className="text-2xl font-display font-bold text-foreground">UPCIGA</CardTitle>
+          <CardDescription className="text-muted-foreground font-sans">
             Faça login para acessar o sistema
           </CardDescription>
         </CardHeader>

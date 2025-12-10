@@ -105,12 +105,42 @@ export function useRelatoriosStats() {
       });
       funcionariosDesempenho.sort((a, b) => b.atendimentos - a.atendimentos);
 
+      // Calcular status dos clientes (baseado na etiqueta)
+      const statusClientes = {
+        ativo: 0,
+        atencao: 0,
+        regular: 0,
+      };
+      (clients ?? []).forEach((client) => {
+        if (client.etiqueta === 'green') statusClientes.ativo++;
+        else if (client.etiqueta === 'red') statusClientes.atencao++;
+        else statusClientes.regular++;
+      });
+
+      const dadosStatusClientes = [
+        { name: 'Ativo', value: statusClientes.ativo, color: '#22c55e' },
+        { name: 'Regular', value: statusClientes.regular, color: '#3b82f6' },
+        { name: 'Atenção', value: statusClientes.atencao, color: '#ef4444' },
+      ].filter(item => item.value > 0);
+
+      // Calcular total do mês atual
+      const hoje = new Date();
+      const mesAtualStart = startOfMonth(hoje);
+      const mesAtualEnd = endOfMonth(hoje);
+      const agendamentosMesAtual = (appointments ?? []).filter((apt) => {
+        const aptDate = new Date(apt.data);
+        return aptDate >= mesAtualStart && aptDate <= mesAtualEnd;
+      });
+      const totalMesAtual = agendamentosMesAtual.reduce((acc, apt) => acc + (apt.valor || 0), 0);
+
       return {
         totalArrecadado,
+        totalMesAtual,
         totalAtendimentos: appointments?.length ?? 0,
         totalClientes: clients?.length ?? 0,
         totalFuncionarios: employees?.length ?? 0,
         dadosServicos: dadosServicos.length > 0 ? dadosServicos : [{ tipo: 'Sem dados', quantidade: 0, valorMedio: 0 }],
+        dadosStatusClientes: dadosStatusClientes.length > 0 ? dadosStatusClientes : [],
         topClientes: topClientes.length > 0 ? topClientes : [],
         evolucaoMensal,
         funcionariosDesempenho: funcionariosDesempenho.slice(0, 5),

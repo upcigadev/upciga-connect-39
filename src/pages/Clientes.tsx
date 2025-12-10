@@ -160,7 +160,7 @@ export default function Clientes() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <StatusBadge variant={cliente.etiqueta === "green" ? "labelGreen" : cliente.etiqueta === "blue" ? "labelBlue" : "labelRed"}>
+                      <StatusBadge variant={cliente.etiqueta === "green" ? "accent" : cliente.etiqueta === "blue" ? "labelBlue" : "labelRed"}>
                         {cliente.etiqueta === "green" ? "Ativo" : cliente.etiqueta === "blue" ? "Regular" : "Atenção"}
                       </StatusBadge>
                     </TableCell>

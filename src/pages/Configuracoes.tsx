@@ -14,6 +14,7 @@ import { useServiceTypes, useDeleteServiceType } from "@/hooks/useServiceTypes";
 import { useProducts, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useScheduleBlocks, useDeleteScheduleBlock } from "@/hooks/useScheduleBlocks";
 import { useProfiles, useUpdateProfileRole, useDeleteUser } from "@/hooks/useProfiles";
+import { useAuditLogs } from "@/hooks/useAudit";
 import { useAuth } from "@/contexts/AuthContext";
 import { ServiceTypeFormModal } from "@/components/configuracoes/ServiceTypeFormModal";
 import { ProductFormModal } from "@/components/configuracoes/ProductFormModal";
@@ -29,6 +30,7 @@ export default function Configuracoes() {
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: blocks = [], isLoading: blocksLoading } = useScheduleBlocks();
   const { data: profiles = [], isLoading: profilesLoading } = useProfiles();
+  const { data: auditLogs = [], isLoading: auditLogsLoading } = useAuditLogs();
   
   const updateSetting = useUpdateSetting();
   const deleteServiceType = useDeleteServiceType();
@@ -376,13 +378,86 @@ export default function Configuracoes() {
 
         <TabsContent value="sistema">
           <Card className="shadow-card">
-            <CardHeader><CardTitle>Logs de Auditoria</CardTitle></CardHeader>
+            <CardHeader>
+              <CardTitle>Logs de Auditoria</CardTitle>
+              <CardDescription>
+                Registro de todas as alterações realizadas no sistema
+              </CardDescription>
+            </CardHeader>
             <CardContent>
-              <div className="rounded-lg border border-border bg-muted/30 p-8 text-center">
-                <Shield className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-4 text-lg font-semibold text-foreground">Área Administrativa</h3>
-                <p className="mt-2 text-muted-foreground">Os logs de auditoria estarão disponíveis em uma versão futura.</p>
-              </div>
+              {auditLogsLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Data/Hora</TableHead>
+                      <TableHead>Tabela</TableHead>
+                      <TableHead>Ação</TableHead>
+                      <TableHead>Registro ID</TableHead>
+                      <TableHead>Alterado por</TableHead>
+                      <TableHead>Alterações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {auditLogs.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                          Nenhum log de auditoria encontrado.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      auditLogs.map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="font-medium">
+                            {new Date(log.created_at).toLocaleString('pt-BR')}
+                          </TableCell>
+                          <TableCell>
+                            <span className="inline-flex rounded-full px-2 py-1 text-xs font-medium bg-muted">
+                              {log.table_name}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                log.action === 'create'
+                                  ? 'bg-green-100 text-green-800'
+                                  : log.action === 'update'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
+                            >
+                              {log.action === 'create'
+                                ? 'Criar'
+                                : log.action === 'update'
+                                ? 'Atualizar'
+                                : 'Excluir'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">{log.record_id}</TableCell>
+                          <TableCell>{log.changed_by}</TableCell>
+                          <TableCell>
+                            {log.changes ? (
+                              <details className="cursor-pointer">
+                                <summary className="text-xs text-muted-foreground hover:text-foreground">
+                                  Ver alterações
+                                </summary>
+                                <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-32">
+                                  {JSON.stringify(log.changes, null, 2)}
+                                </pre>
+                              </details>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>

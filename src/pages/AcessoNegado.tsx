@@ -13,8 +13,8 @@ export default function AcessoNegado() {
           <div className="flex justify-center mb-4">
             <ShieldX className="h-16 w-16 text-destructive" />
           </div>
-          <CardTitle className="text-2xl font-bold">Acesso Negado</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-2xl font-display font-bold">Acesso Negado</CardTitle>
+          <CardDescription className="font-sans">
             Você não tem permissão para acessar esta página.
           </CardDescription>
         </CardHeader>

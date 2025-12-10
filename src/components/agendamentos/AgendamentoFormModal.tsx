@@ -36,6 +36,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useClientes } from "@/hooks/useClientes";
 import { useFuncionarios } from "@/hooks/useFuncionarios";
 import { useServiceTypes } from "@/hooks/useServiceTypes";
+import { checkScheduleConflict } from "@/hooks/useScheduleBlocks";
 import {
   useCreateAgendamento,
   useUpdateAgendamento,
@@ -131,6 +132,22 @@ export function AgendamentoFormModal({
   }, [agendamento, defaultDate, reset]);
 
   const onSubmit = async (data: AgendamentoFormData) => {
+    // Validar bloqueios de agenda antes de salvar
+    const conflict = await checkScheduleConflict(
+      data.data,
+      data.hora,
+      data.funcionario_nome
+    );
+
+    if (conflict.blocked) {
+      toast({
+        title: "Horário indisponível",
+        description: conflict.reason,
+        variant: "destructive",
+      });
+      return;
+    }
+
     const agendamentoData: NovoAgendamento = {
       cliente_nome: data.cliente_nome,
       funcionario_nome: data.funcionario_nome,

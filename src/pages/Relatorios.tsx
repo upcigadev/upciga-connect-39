@@ -41,10 +41,12 @@ export default function Relatorios() {
 
   const {
     totalArrecadado = 0,
+    totalMesAtual = 0,
     totalAtendimentos = 0,
     totalClientes = 0,
     totalFuncionarios = 0,
     dadosServicos = [],
+    dadosStatusClientes = [],
     topClientes = [],
     evolucaoMensal = [],
     funcionariosDesempenho = [],
@@ -70,6 +72,22 @@ export default function Relatorios() {
               </div>
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-success/10">
                 <DollarSign className="h-6 w-6 text-success" />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-card">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Receita do Mês</p>
+                <p className="text-2xl font-bold text-foreground">
+                  R$ {totalMesAtual.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                </p>
+              </div>
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                <TrendingUp className="h-6 w-6 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -149,6 +167,51 @@ export default function Relatorios() {
                     />
                     <Bar dataKey="quantidade" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                   </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Status dos Clientes - Pizza */}
+        <Card className="shadow-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Status dos Clientes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {dadosStatusClientes.length === 0 ? (
+              <div className="flex h-80 items-center justify-center text-muted-foreground">
+                Nenhum dado disponível
+              </div>
+            ) : (
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={dadosStatusClientes}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {dadosStatusClientes.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "8px",
+                      }}
+                    />
+                  </PieChart>
                 </ResponsiveContainer>
               </div>
             )}

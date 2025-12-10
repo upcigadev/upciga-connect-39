@@ -128,7 +128,7 @@ export default function Dashboard() {
                     <StatusBadge
                       variant={
                         client.etiqueta === "green"
-                          ? "labelGreen"
+                          ? "accent"
                           : client.etiqueta === "blue"
                           ? "labelBlue"
                           : "labelRed"

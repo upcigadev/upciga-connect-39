@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useCreateAuditLog } from './useAudit';
 
 export interface Agendamento {
   id: number;
@@ -84,6 +85,7 @@ export function useAgendamentosByMonth(year: number, month: number) {
 
 export function useCreateAgendamento() {
   const queryClient = useQueryClient();
+  const createAuditLog = useCreateAuditLog();
 
   return useMutation({
     mutationFn: async (agendamento: NovoAgendamento) => {
@@ -94,6 +96,10 @@ export function useCreateAgendamento() {
         .single();
 
       if (error) throw new Error(`Erro ao criar agendamento: ${error.message}`);
+      
+      // Registrar log de auditoria
+      await createAuditLog('appointments', data.id, 'create', { new: data });
+      
       return data;
     },
     onSuccess: () => {
@@ -105,9 +111,17 @@ export function useCreateAgendamento() {
 
 export function useUpdateAgendamento() {
   const queryClient = useQueryClient();
+  const createAuditLog = useCreateAuditLog();
 
   return useMutation({
     mutationFn: async ({ id, ...agendamento }: Partial<Agendamento> & { id: number }) => {
+      // Buscar dados antigos antes de atualizar
+      const { data: oldData } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('id', id)
+        .single();
+
       const { data, error } = await supabase
         .from('appointments')
         .update(agendamento)
@@ -116,6 +130,10 @@ export function useUpdateAgendamento() {
         .single();
 
       if (error) throw new Error(`Erro ao atualizar agendamento: ${error.message}`);
+      
+      // Registrar log de auditoria
+      await createAuditLog('appointments', id, 'update', { old: oldData, new: data });
+      
       return data;
     },
     onSuccess: () => {
@@ -127,15 +145,26 @@ export function useUpdateAgendamento() {
 
 export function useDeleteAgendamento() {
   const queryClient = useQueryClient();
+  const createAuditLog = useCreateAuditLog();
 
   return useMutation({
     mutationFn: async (id: number) => {
+      // Buscar dados antes de deletar
+      const { data: oldData } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('id', id)
+        .single();
+
       const { error } = await supabase
         .from('appointments')
         .delete()
         .eq('id', id);
 
       if (error) throw new Error(`Erro ao excluir agendamento: ${error.message}`);
+      
+      // Registrar log de auditoria
+      await createAuditLog('appointments', id, 'delete', { old: oldData });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agendamentos'] });
