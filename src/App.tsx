@@ -2,7 +2,9 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Clientes from "./pages/Clientes";
@@ -10,6 +12,8 @@ import Agendamentos from "./pages/Agendamentos";
 import Funcionarios from "./pages/Funcionarios";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
+import Login from "./pages/Login";
+import AcessoNegado from "./pages/AcessoNegado";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -25,23 +29,69 @@ const queryClient = new QueryClient({
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/clientes" element={<Clientes />} />
-            <Route path="/agendamentos" element={<Agendamentos />} />
-            <Route path="/funcionarios" element={<Funcionarios />} />
-            <Route path="/relatorios" element={<Relatorios />} />
-            <Route path="/configuracoes" element={<Configuracoes />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/acesso-negado" element={<AcessoNegado />} />
+            <Route element={<AppLayout />}>
+              <Route
+                path="/"
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/clientes"
+                element={
+                  <ProtectedRoute>
+                    <Clientes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/agendamentos"
+                element={
+                  <ProtectedRoute>
+                    <Agendamentos />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/funcionarios"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <Funcionarios />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/relatorios"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <Relatorios />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/configuracoes"
+                element={
+                  <ProtectedRoute adminOnly>
+                    <Configuracoes />
+                  </ProtectedRoute>
+                }
+              />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

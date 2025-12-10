@@ -1,21 +1,25 @@
 import { useState } from "react";
-import { Clock, Calendar, Package, Shield, Plus, Trash2, Loader2 } from "lucide-react";
+import { Clock, Calendar, Package, Shield, Plus, Trash2, Loader2, Users } from "lucide-react";
 import { PageHeader } from "@/components/ui/page-header";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useSettings, useUpdateSetting } from "@/hooks/useSettings";
 import { useServiceTypes, useDeleteServiceType } from "@/hooks/useServiceTypes";
 import { useProducts, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useScheduleBlocks, useDeleteScheduleBlock } from "@/hooks/useScheduleBlocks";
+import { useProfiles, useUpdateProfileRole } from "@/hooks/useProfiles";
 import { ServiceTypeFormModal } from "@/components/configuracoes/ServiceTypeFormModal";
 import { ProductFormModal } from "@/components/configuracoes/ProductFormModal";
 import { ScheduleBlockFormModal } from "@/components/configuracoes/ScheduleBlockFormModal";
+import { UserFormModal } from "@/components/configuracoes/UserFormModal";
 import { useToast } from "@/hooks/use-toast";
+import { UserRole } from "@/contexts/AuthContext";
 
 export default function Configuracoes() {
   const { toast } = useToast();
@@ -23,16 +27,19 @@ export default function Configuracoes() {
   const { data: serviceTypes = [], isLoading: servicesLoading } = useServiceTypes();
   const { data: products = [], isLoading: productsLoading } = useProducts();
   const { data: blocks = [], isLoading: blocksLoading } = useScheduleBlocks();
+  const { data: profiles = [], isLoading: profilesLoading } = useProfiles();
   
   const updateSetting = useUpdateSetting();
   const deleteServiceType = useDeleteServiceType();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
   const deleteBlock = useDeleteScheduleBlock();
+  const updateProfileRole = useUpdateProfileRole();
 
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [blockModalOpen, setBlockModalOpen] = useState(false);
+  const [userModalOpen, setUserModalOpen] = useState(false);
 
   const handleSettingChange = async (chave: string, valor: string) => {
     try {
@@ -67,6 +74,35 @@ export default function Configuracoes() {
     }
   };
 
+  const handleUpdateRole = async (id: string, newRole: UserRole) => {
+    try {
+      await updateProfileRole.mutateAsync({ id, role: newRole });
+      toast({
+        title: "Role atualizado!",
+        description: "O papel do usuário foi alterado com sucesso.",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao atualizar role",
+        description: error.message || "Não foi possível atualizar o papel do usuário.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const getRoleLabel = (role: UserRole) => {
+    switch (role) {
+      case "admin":
+        return "Administrador";
+      case "funcionario":
+        return "Funcionário";
+      case "user":
+        return "Usuário";
+      default:
+        return role;
+    }
+  };
+
   if (settingsLoading) {
     return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
   }
@@ -83,6 +119,7 @@ export default function Configuracoes() {
           <TabsTrigger value="agenda" className="gap-2"><Clock className="h-4 w-4" />Agenda</TabsTrigger>
           <TabsTrigger value="bloqueios" className="gap-2"><Calendar className="h-4 w-4" />Bloqueios</TabsTrigger>
           <TabsTrigger value="cadastros" className="gap-2"><Package className="h-4 w-4" />Cadastros</TabsTrigger>
+          <TabsTrigger value="usuarios" className="gap-2"><Users className="h-4 w-4" />Usuários</TabsTrigger>
           <TabsTrigger value="sistema" className="gap-2"><Shield className="h-4 w-4" />Sistema</TabsTrigger>
         </TabsList>
 
@@ -228,6 +265,75 @@ export default function Configuracoes() {
           </div>
         </TabsContent>
 
+        <TabsContent value="usuarios">
+          <Card className="shadow-card">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Usuários do Sistema</CardTitle>
+                <CardDescription>
+                  Gerencie os usuários e seus papéis no sistema.
+                </CardDescription>
+              </div>
+              <Button className="gap-2" onClick={() => setUserModalOpen(true)}>
+                <Plus className="h-4 w-4" />
+                Novo Usuário
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {profilesLoading ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Email</TableHead>
+                      <TableHead>Papel</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {profiles.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                          Nenhum usuário encontrado.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      profiles.map((profile) => (
+                        <TableRow key={profile.id}>
+                          <TableCell className="font-medium">{profile.email}</TableCell>
+                          <TableCell>
+                            <span className="inline-flex rounded-full px-2 py-1 text-xs font-medium bg-primary/10 text-primary">
+                              {getRoleLabel(profile.role)}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Select
+                              value={profile.role}
+                              onValueChange={(value) => handleUpdateRole(profile.id, value as UserRole)}
+                            >
+                              <SelectTrigger className="w-[150px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="user">Usuário</SelectItem>
+                                <SelectItem value="funcionario">Funcionário</SelectItem>
+                                <SelectItem value="admin">Administrador</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="sistema">
           <Card className="shadow-card">
             <CardHeader><CardTitle>Logs de Auditoria</CardTitle></CardHeader>
@@ -235,7 +341,7 @@ export default function Configuracoes() {
               <div className="rounded-lg border border-border bg-muted/30 p-8 text-center">
                 <Shield className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-4 text-lg font-semibold text-foreground">Área Administrativa</h3>
-                <p className="mt-2 text-muted-foreground">Os logs de auditoria e gerenciamento de usuários estarão disponíveis após implementar autenticação.</p>
+                <p className="mt-2 text-muted-foreground">Os logs de auditoria estarão disponíveis em uma versão futura.</p>
               </div>
             </CardContent>
           </Card>
@@ -245,6 +351,7 @@ export default function Configuracoes() {
       <ServiceTypeFormModal open={serviceModalOpen} onOpenChange={setServiceModalOpen} />
       <ProductFormModal open={productModalOpen} onOpenChange={setProductModalOpen} />
       <ScheduleBlockFormModal open={blockModalOpen} onOpenChange={setBlockModalOpen} />
+      <UserFormModal open={userModalOpen} onOpenChange={setUserModalOpen} />
     </div>
   );
 }
