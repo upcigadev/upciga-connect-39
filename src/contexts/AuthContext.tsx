@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -20,7 +20,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   isAdmin: boolean;
   isFuncionario: boolean;
-  setIsCreatingUser?: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,9 +29,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
-  const isCreatingUserRef = useRef(false);
 
-  const fetchProfile = async (userId: string): Promise<Profile | null> => {
+  // Fetch profile separately to avoid deadlock
+  const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -42,29 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Erro ao buscar perfil:', error);
-        
-        // Erro de recursão infinita nas políticas RLS
-        if (error.code === '42P17' || error.message?.includes('infinite recursion')) {
-          console.error('❌ ERRO CRÍTICO: Recursão infinita detectada nas políticas RLS da tabela profiles');
-          console.error('📋 SOLUÇÃO: Execute o arquivo fix_profiles_rls.sql no Supabase para corrigir as políticas');
-          console.error('   Ou configure as políticas RLS manualmente no dashboard do Supabase');
-          return null;
-        }
-        
-        // Se o perfil não existe (código PGRST116), retornar null
-        if (error.code === 'PGRST116') {
-          console.warn('Perfil não encontrado para o usuário:', userId);
-          console.warn('Certifique-se de que o perfil foi criado na tabela profiles com o mesmo id do usuário');
-        }
         return null;
       }
-
-      if (!data) {
-        console.warn('Perfil retornou null para o usuário:', userId);
-        return null;
-      }
-
-      console.log('Perfil encontrado:', data);
       return data as Profile;
     } catch (error) {
       console.error('Erro ao buscar perfil:', error);
@@ -75,70 +53,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Verificar sessão inicial
-    const initializeAuth = async () => {
-      try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+    // Set up auth state listener FIRST - SYNC only, no async calls inside
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        if (!mounted) return;
         
-        if (error) {
-          console.error('Erro ao buscar sessão:', error);
-          if (mounted) {
-            setLoading(false);
-          }
+        // Only sync state updates here - NO async calls to prevent deadlock
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        // If signed out, clear profile
+        if (!newSession?.user) {
+          setProfile(null);
+          setLoading(false);
           return;
         }
-
-        if (mounted) {
-          setSession(session);
-          setUser(session?.user ?? null);
-          
-          if (session?.user) {
-            const profileData = await fetchProfile(session.user.id);
+        
+        // Defer profile fetch using setTimeout to prevent deadlock
+        if (newSession?.user) {
+          setTimeout(async () => {
+            if (!mounted) return;
+            const profileData = await fetchProfile(newSession.user.id);
             if (mounted) {
               setProfile(profileData);
+              setLoading(false);
             }
-          } else {
-            setProfile(null);
-          }
-          
-          setLoading(false);
-        }
-      } catch (error) {
-        console.error('Erro ao inicializar autenticação:', error);
-        if (mounted) {
-          setLoading(false);
+          }, 0);
         }
       }
-    };
+    );
 
-    initializeAuth();
-
-    // Escutar mudanças de autenticação
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+    // THEN check for existing session
+    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
       if (!mounted) return;
-
-      // Ignorar mudanças de auth state se estivermos criando um usuário
-      // Isso evita que a sessão mude quando o admin cria um novo usuário
-      if (isCreatingUserRef.current) {
-        console.log('Ignorando mudança de auth state durante criação de usuário');
-        return;
-      }
-
-      setSession(session);
-      setUser(session?.user ?? null);
       
-      if (session?.user) {
-        const profileData = await fetchProfile(session.user.id);
+      setSession(existingSession);
+      setUser(existingSession?.user ?? null);
+      
+      if (existingSession?.user) {
+        const profileData = await fetchProfile(existingSession.user.id);
         if (mounted) {
           setProfile(profileData);
         }
-      } else {
-        setProfile(null);
       }
       
-      setLoading(false);
+      if (mounted) {
+        setLoading(false);
+      }
     });
 
     return () => {
@@ -157,24 +118,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw error;
     }
 
-    if (data.user) {
-      setUser(data.user);
-      setSession(data.session);
-      const profileData = await fetchProfile(data.user.id);
-      setProfile(profileData);
-      setLoading(false);
-    }
+    // State will be updated by onAuthStateChange
+    return;
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    setUser(null);
-    setSession(null);
-    setProfile(null);
-  };
-
-  const setIsCreatingUser = (value: boolean) => {
-    isCreatingUserRef.current = value;
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw error;
+    }
+    // State will be cleared by onAuthStateChange
   };
 
   const value: AuthContextType = {
@@ -186,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signOut,
     isAdmin: profile?.role === 'admin',
     isFuncionario: profile?.role === 'funcionario' || profile?.role === 'admin',
-    setIsCreatingUser, // Expor para uso no hook de criação de usuário
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -199,4 +151,3 @@ export function useAuth() {
   }
   return context;
 }
-
