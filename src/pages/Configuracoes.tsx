@@ -13,7 +13,8 @@ import { useSettings, useUpdateSetting } from "@/hooks/useSettings";
 import { useServiceTypes, useDeleteServiceType } from "@/hooks/useServiceTypes";
 import { useProducts, useUpdateProduct, useDeleteProduct } from "@/hooks/useProducts";
 import { useScheduleBlocks, useDeleteScheduleBlock } from "@/hooks/useScheduleBlocks";
-import { useProfiles, useUpdateProfileRole } from "@/hooks/useProfiles";
+import { useProfiles, useUpdateProfileRole, useDeleteUser } from "@/hooks/useProfiles";
+import { useAuth } from "@/contexts/AuthContext";
 import { ServiceTypeFormModal } from "@/components/configuracoes/ServiceTypeFormModal";
 import { ProductFormModal } from "@/components/configuracoes/ProductFormModal";
 import { ScheduleBlockFormModal } from "@/components/configuracoes/ScheduleBlockFormModal";
@@ -35,6 +36,8 @@ export default function Configuracoes() {
   const deleteProduct = useDeleteProduct();
   const deleteBlock = useDeleteScheduleBlock();
   const updateProfileRole = useUpdateProfileRole();
+  const deleteUser = useDeleteUser();
+  const { profile: currentProfile } = useAuth();
 
   const [serviceModalOpen, setServiceModalOpen] = useState(false);
   const [productModalOpen, setProductModalOpen] = useState(false);
@@ -85,6 +88,26 @@ export default function Configuracoes() {
       toast({
         title: "Erro ao atualizar role",
         description: error.message || "Não foi possível atualizar o papel do usuário.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, email: string) => {
+    if (!confirm(`Tem certeza que deseja excluir o usuário ${email}? Esta ação não pode ser desfeita.`)) {
+      return;
+    }
+
+    try {
+      await deleteUser.mutateAsync(userId);
+      toast({
+        title: "Usuário excluído!",
+        description: `O usuário ${email} foi removido do sistema.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Erro ao excluir usuário",
+        description: error.message || "Não foi possível excluir o usuário.",
         variant: "destructive",
       });
     }
@@ -310,19 +333,36 @@ export default function Configuracoes() {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <Select
-                              value={profile.role}
-                              onValueChange={(value) => handleUpdateRole(profile.id, value as UserRole)}
-                            >
-                              <SelectTrigger className="w-[150px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="user">Usuário</SelectItem>
-                                <SelectItem value="funcionario">Funcionário</SelectItem>
-                                <SelectItem value="admin">Administrador</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <div className="flex items-center justify-end gap-2">
+                              <Select
+                                value={profile.role}
+                                onValueChange={(value) => handleUpdateRole(profile.id, value as UserRole)}
+                              >
+                                <SelectTrigger className="w-[140px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="user">Usuário</SelectItem>
+                                  <SelectItem value="funcionario">Funcionário</SelectItem>
+                                  <SelectItem value="admin">Administrador</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              {currentProfile?.id !== profile.id && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={() => handleDeleteUser(profile.id, profile.email)}
+                                  disabled={deleteUser.isPending}
+                                >
+                                  {deleteUser.isPending ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))

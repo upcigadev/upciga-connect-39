@@ -25,6 +25,16 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!email || !password) {
+      toast({
+        title: 'Campos obrigatórios',
+        description: 'Preencha email e senha.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -33,11 +43,19 @@ export default function Login() {
         title: 'Login realizado com sucesso!',
         description: 'Bem-vindo ao sistema.',
       });
-      navigate('/');
+      navigate('/', { replace: true });
     } catch (error: any) {
+      let message = 'Credenciais inválidas. Verifique seu email e senha.';
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        message = 'Email ou senha incorretos.';
+      } else if (error.message?.includes('Email not confirmed')) {
+        message = 'Email não confirmado. Verifique sua caixa de entrada.';
+      }
+      
       toast({
         title: 'Erro ao fazer login',
-        description: error.message || 'Credenciais inválidas. Verifique seu email e senha.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -47,28 +65,39 @@ export default function Login() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Se já logado, não renderiza o form
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted p-4">
-      <Card className="w-full max-w-md shadow-lg">
+      <Card className="w-full max-w-md shadow-lg border-border">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary shadow-md">
               <span className="text-2xl font-bold text-primary-foreground">U</span>
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">Bem-vindo ao UPCIGA</CardTitle>
-          <CardDescription>Faça login para acessar o sistema</CardDescription>
+          <CardTitle className="text-2xl font-bold text-foreground">UPCIGA</CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Faça login para acessar o sistema
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -80,11 +109,12 @@ export default function Login() {
                   className="pl-10"
                   required
                   disabled={isLoading}
+                  autoComplete="email"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-foreground">Senha</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -96,6 +126,7 @@ export default function Login() {
                   className="pl-10"
                   required
                   disabled={isLoading}
+                  autoComplete="current-password"
                 />
               </div>
             </div>
@@ -115,4 +146,3 @@ export default function Login() {
     </div>
   );
 }
-
