@@ -46,15 +46,16 @@ serve(async (req) => {
       );
     }
 
-    // Check if current user is admin
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from("profiles")
+    // Check if current user is admin using user_roles table
+    const { data: adminRole, error: roleError } = await supabaseAdmin
+      .from("user_roles")
       .select("role")
-      .eq("id", currentUser.id)
-      .single();
+      .eq("user_id", currentUser.id)
+      .eq("role", "admin")
+      .maybeSingle();
 
-    if (profileError || profile?.role !== "admin") {
-      console.log("User is not admin:", profileError);
+    if (roleError || !adminRole) {
+      console.log("User is not admin:", roleError);
       return new Response(
         JSON.stringify({ error: "Apenas administradores podem criar usuários" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
