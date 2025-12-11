@@ -52,24 +52,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: NodeJS.Timeout;
+
+    // Timeout de segurança: se após 5 segundos ainda estiver carregando, força o loading para false
+    timeoutId = setTimeout(() => {
+      if (mounted) {
+        console.warn('Timeout ao verificar autenticação, assumindo usuário não autenticado');
+        setLoading(false);
+      }
+    }, 5000);
 
     // 1. Configura o listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         if (!mounted) return;
         
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
-        
-        if (!newSession?.user) {
-          setProfile(null);
-          setLoading(false);
-        } else {
-          // Se o usuário logou, busca o perfil
-          const profileData = await fetchProfile(newSession.user.id);
-          if (mounted) {
-            setProfile(profileData);
+        try {
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          
+          if (!newSession?.user) {
+            setProfile(null);
             setLoading(false);
+            if (timeoutId) clearTimeout(timeoutId);
+          } else {
+            // Se o usuário logou, busca o perfil
+            const profileData = await fetchProfile(newSession.user.id);
+            if (mounted) {
+              setProfile(profileData);
+              setLoading(false);
+              if (timeoutId) clearTimeout(timeoutId);
+            }
+          }
+        } catch (error) {
+          console.error('Erro no onAuthStateChange:', error);
+          if (mounted) {
+            setLoading(false);
+            if (timeoutId) clearTimeout(timeoutId);
           }
         }
       }
@@ -80,28 +99,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(async ({ data: { session: existingSession } }) => {
         if (!mounted) return;
         
-        setSession(existingSession);
-        setUser(existingSession?.user ?? null);
-        
-        if (existingSession?.user) {
-          const profileData = await fetchProfile(existingSession.user.id);
-          if (mounted) {
-            setProfile(profileData);
+        try {
+          setSession(existingSession);
+          setUser(existingSession?.user ?? null);
+          
+          if (existingSession?.user) {
+            const profileData = await fetchProfile(existingSession.user.id);
+            if (mounted) {
+              setProfile(profileData);
+            }
           }
+        } catch (error) {
+          console.error('Erro ao processar sessão existente:', error);
         }
       })
       .catch((err) => {
         console.error("Erro ao verificar sessão inicial:", err);
+        // Em caso de erro (ex: Supabase não configurado), assume usuário não autenticado
+        if (mounted) {
+          setUser(null);
+          setSession(null);
+          setProfile(null);
+        }
       })
       .finally(() => {
         // CORREÇÃO: Garante que o loading pare, aconteça o que acontecer
         if (mounted) {
           setLoading(false);
+          if (timeoutId) clearTimeout(timeoutId);
         }
       });
 
     return () => {
       mounted = false;
+      if (timeoutId) clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
