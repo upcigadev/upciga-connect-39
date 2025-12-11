@@ -16,7 +16,8 @@ export function useAuditLogs() {
   return useQuery({
     queryKey: ['audit_logs'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Using type assertion since audit_logs may not be in generated types
+      const { data, error } = await (supabase as any)
         .from('audit_logs')
         .select('*')
         .order('created_at', { ascending: false })
@@ -46,7 +47,7 @@ export function useCreateAuditLog() {
     }
 
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('audit_logs')
         .insert({
           table_name: tableName,
