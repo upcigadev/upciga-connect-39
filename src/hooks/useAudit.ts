@@ -16,8 +16,9 @@ export function useAuditLogs() {
   return useQuery({
     queryKey: ['audit_logs'],
     queryFn: async () => {
+      // Using rpc or raw query since audit_logs may not be in generated types
       const { data, error } = await supabase
-        .from('audit_logs')
+        .from('audit_logs' as any)
         .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
@@ -47,7 +48,7 @@ export function useCreateAuditLog() {
 
     try {
       const { error } = await supabase
-        .from('audit_logs')
+        .from('audit_logs' as any)
         .insert({
           table_name: tableName,
           record_id: String(recordId),
