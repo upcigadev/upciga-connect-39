@@ -30,20 +30,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Busca o perfil de forma segura
-  const fetchProfile = async (userId: string) => {
+  // Busca o perfil de forma segura (role vem da tabela user_roles)
+  const fetchProfile = async (userId: string): Promise<Profile | null> => {
     try {
-      const { data, error } = await supabase
+      // Fetch profile data
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, email, role, nome')
+        .select('id, email, nome')
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error('Erro ao buscar perfil:', error);
+      if (profileError) {
+        console.error('Erro ao buscar perfil:', profileError);
         return null;
       }
-      return data as Profile;
+
+      // Fetch user role from user_roles table (secure - can't be self-modified)
+      const { data: roleData } = await (supabase as any)
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      // Determine role: from user_roles table or fallback to 'user'
+      const userRole = roleData?.role || 'user';
+
+      return {
+        ...profileData,
+        role: userRole as UserRole,
+      } as Profile;
     } catch (error) {
       console.error('Erro ao buscar perfil:', error);
       return null;
