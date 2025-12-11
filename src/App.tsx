@@ -27,6 +27,17 @@ const queryClient = new QueryClient({
   },
 });
 
+/**
+ * App - Abordagem "non-blocking" (similar ao Angular/Ionic)
+ * 
+ * O Router SEMPRE carrega, independentemente de variáveis de ambiente ou configuração.
+ * O ProtectedRoute (Guard) é responsável por decidir o acesso e redirecionar quando necessário.
+ * 
+ * Isso permite:
+ * - Redirecionamento automático para /login quando não autenticado
+ * - Fluxo rápido sem bloqueios de render
+ * - Melhor UX mesmo em caso de falha de configuração
+ */
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
