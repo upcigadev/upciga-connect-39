@@ -30,7 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch profile separately to avoid deadlock
+  // Busca o perfil de forma segura
   const fetchProfile = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -53,54 +53,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener FIRST - SYNC only, no async calls inside
+    // 1. Configura o listener de mudanças de autenticação
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
+      async (event, newSession) => {
         if (!mounted) return;
         
-        // Only sync state updates here - NO async calls to prevent deadlock
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
-        // If signed out, clear profile
         if (!newSession?.user) {
           setProfile(null);
           setLoading(false);
-          return;
-        }
-        
-        // Defer profile fetch using setTimeout to prevent deadlock
-        if (newSession?.user) {
-          setTimeout(async () => {
-            if (!mounted) return;
-            const profileData = await fetchProfile(newSession.user.id);
-            if (mounted) {
-              setProfile(profileData);
-              setLoading(false);
-            }
-          }, 0);
+        } else {
+          // Se o usuário logou, busca o perfil
+          const profileData = await fetchProfile(newSession.user.id);
+          if (mounted) {
+            setProfile(profileData);
+            setLoading(false);
+          }
         }
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session: existingSession } }) => {
-      if (!mounted) return;
-      
-      setSession(existingSession);
-      setUser(existingSession?.user ?? null);
-      
-      if (existingSession?.user) {
-        const profileData = await fetchProfile(existingSession.user.id);
-        if (mounted) {
-          setProfile(profileData);
+    // 2. Verifica a sessão inicial
+    supabase.auth.getSession()
+      .then(async ({ data: { session: existingSession } }) => {
+        if (!mounted) return;
+        
+        setSession(existingSession);
+        setUser(existingSession?.user ?? null);
+        
+        if (existingSession?.user) {
+          const profileData = await fetchProfile(existingSession.user.id);
+          if (mounted) {
+            setProfile(profileData);
+          }
         }
-      }
-      
-      if (mounted) {
-        setLoading(false);
-      }
-    });
+      })
+      .catch((err) => {
+        console.error("Erro ao verificar sessão inicial:", err);
+      })
+      .finally(() => {
+        // CORREÇÃO: Garante que o loading pare, aconteça o que acontecer
+        if (mounted) {
+          setLoading(false);
+        }
+      });
 
     return () => {
       mounted = false;
@@ -109,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -117,9 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       throw error;
     }
-
-    // State will be updated by onAuthStateChange
-    return;
   };
 
   const signOut = async () => {
@@ -127,7 +122,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       throw error;
     }
-    // State will be cleared by onAuthStateChange
   };
 
   const value: AuthContextType = {
